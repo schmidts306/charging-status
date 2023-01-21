@@ -21,8 +21,13 @@ export class AppService {
     return result.data;
   }
 
-  @Cron('0 */12 * * * *')
+  @Cron('0 * * * * *')
   async getChargingStatus() {
+    console.log('getChargingStatus');
+    if (this.getAlertStatus() === 'false') {
+      console.log('turned-off');
+      return;
+    }
     const stations = await this.getStations();
     const id = stations?.results[0]?.dataSources?.chargingAvailability?.id;
     const address = stations?.results[0]?.address?.freeformAddress;
