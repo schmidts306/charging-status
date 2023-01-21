@@ -1,10 +1,14 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import * as fs from 'fs';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class AppService {
+  API_URI = 'https://api.tomtom.com/search/2';
+  API_KEY = 'bJX8ybLsRAxTax1Ca08q1hYZPNXBf4cw';
+
   constructor(private http: HttpService) {}
 
   getHello(): string {
@@ -12,19 +16,18 @@ export class AppService {
   }
 
   async getStations() {
-    const url =
-      'https://api.tomtom.com/search/2/poiSearch/charging%20dahlbergstrasse%20aschaffenburg.json?key=bJX8ybLsRAxTax1Ca08q1hYZPNXBf4cw';
+    const url = `${this.API_URI}/poiSearch/charging%20dahlbergstrasse%20aschaffenburg.json?key=${this.API_KEY}`;
     const result = await lastValueFrom(this.http.get(url));
     return result.data;
   }
 
+  @Cron('0 */12 * * * *')
   async getChargingStatus() {
     const stations = await this.getStations();
     const id = stations?.results[0]?.dataSources?.chargingAvailability?.id;
+    const address = stations?.results[0]?.address?.freeformAddress;
     if (!id) return { ok: false, stations };
-    const url =
-      'https://api.tomtom.com/search/2/chargingAvailability.json?key=bJX8ybLsRAxTax1Ca08q1hYZPNXBf4cw&chargingAvailability=' +
-      id;
+    const url = `${this.API_URI}/chargingAvailability.json?key=${this.API_KEY}&chargingAvailability=${id}`;
     const result = await lastValueFrom(this.http.get(url));
     const connectors = result.data?.connectors;
     if (!connectors?.length) return { ok: false, result: result.data };
@@ -40,7 +43,14 @@ export class AppService {
         this.sendAlert(prevAvailable, available.toString());
       }
     }
-    return { ok: true, available, result: result.data };
+
+    console.log(result.data);
+
+    return {
+      ok: true,
+      ...result.data.connectors[0].availability.current,
+      address,
+    };
   }
 
   getPrevAvailable() {
@@ -50,6 +60,19 @@ export class AppService {
 
   getAlertStatus() {
     const statusStr = fs.readFileSync('./status.txt', 'utf8');
+    return statusStr.split(';')[0].split('=')[1];
+  }
+
+  getAvailableStatus() {
+    const statusStr = fs.readFileSync('./status.txt', 'utf8');
+    return statusStr.split(';')[1].split('=')[1];
+  }
+
+  setAlert(on: boolean) {
+    const availableStatus = this.getAvailableStatus();
+    const alertStatus = on ? 'true' : 'false';
+    const statusStr = `alert=${alertStatus};available=${availableStatus}`;
+    fs.writeFileSync('./status.txt', statusStr);
     return statusStr.split(';')[0].split('=')[1];
   }
 

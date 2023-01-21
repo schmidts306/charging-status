@@ -19,4 +19,14 @@ export class AppController {
   getChargingStatus() {
     return this.appService.getChargingStatus();
   }
+
+  @Get('alert-on')
+  alertOn() {
+    return this.appService.setAlert(true);
+  }
+
+  @Get('alert-off')
+  alertOff() {
+    return this.appService.setAlert(false);
+  }
 }

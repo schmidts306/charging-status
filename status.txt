@@ -1,1 +1,1 @@
-alert=true;available=2
+alert=true;available=0
