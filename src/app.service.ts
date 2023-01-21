@@ -22,11 +22,11 @@ export class AppService {
   }
 
   @Cron('0 * * * * *')
-  async getChargingStatus() {
+  async getChargingStatus(always = false) {
     console.log('getChargingStatus');
-    if (this.getAlertStatus() === 'false') {
+    if (this.getAlertStatus() === 'false' && !always) {
       console.log('turned-off');
-      return;
+      return 'turned-off';
     }
     const stations = await this.getStations();
     const id = stations?.results[0]?.dataSources?.chargingAvailability?.id;
