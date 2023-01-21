@@ -23,8 +23,8 @@ export class AppService {
 
   @Cron('0 * * * * *')
   async getChargingStatus(always = false) {
-    console.log('getChargingStatus');
-    if (this.getAlertStatus() === 'false' && !always) {
+    console.log('getChargingStatus', always);
+    if (this.getAlertStatus() === 'false' || !always) {
       console.log('turned-off');
       return 'turned-off';
     }
