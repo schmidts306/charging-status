@@ -49,7 +49,7 @@ export class AppService {
       }
     }
 
-    console.log(result.data);
+    console.log(result.data.connectors[0].availability);
 
     return {
       ok: true,
